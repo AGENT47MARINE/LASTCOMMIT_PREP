@@ -27,51 +27,19 @@ async def health():
 @api.post("/v1/answer", response_model=EvaluationOutput)
 async def process_for_competition(data: EvaluationInput):
     """
-    Main Endpoint for External Evaluation Engine.
+    Modular Endpoint for External Evaluation Engine.
+    Currently hard-routed to Level 05.
     """
     print(f"\n--- New Request Received ---")
     print(f"Query: {data.query}")
     start_time = time.time()
     try:
-        # 1. Initialize State
-        initial_state = {
-            "input": data.query,
-            "intent": None,
-            "result": None,
-            "confidence": 0.0,
-            "error": None,
-            "steps": [],
-            "retries": 0
-        }
+        import importlib
+        # Route to the current active level (05)
+        agent = importlib.import_module("challenges.05.agent")
         
-        # 2. Invoke the Cloud Graph
-        final_state = app.invoke(initial_state)
-        
-        # 3. Extract the primary result as a string for the 'output' field
-        result_dict = final_state.get("result", {})
-        
-        # Flattening logic: deep-dives into the UniversalOutput structure
-        worker_result = result_dict.get("result", {}) if isinstance(result_dict, dict) else {}
-        
-        # Priority mapping for different worker outputs
-        search_keys = ["answer", "solution", "summary", "analysis", "entities", "anomalies", "question"]
-        
-        answer_str = None
-        for key in search_keys:
-            if key in worker_result:
-                answer_str = worker_result[key]
-                break
-        
-        # Fallback to top-level if not found in nested result
-        if not answer_str:
-            for key in search_keys:
-                if key in result_dict:
-                    answer_str = result_dict[key]
-                    break
-        
-        # Ultimate fallback
-        if not answer_str:
-            answer_str = str(result_dict)
+        # Execute the modular agent
+        answer_str = agent.run(data.query)
 
         # --- POST-PROCESSING FOR 100% SCORE ---
         if isinstance(answer_str, str):
