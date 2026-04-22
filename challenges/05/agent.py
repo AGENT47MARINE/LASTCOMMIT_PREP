@@ -15,7 +15,8 @@ RULES:
 3. Never repeat or rephrase the question in your answer.
 4. Do not add explanations, caveats, or extra commentary unless explicitly asked.
 5. Do not include any punctuation at the end of your answer.
-6. Output plain text only. No markdown, no bullet points, no headers, unless the question explicitly asks for a structured format.
+6. Omit leading articles ("The", "A", "An") from the extracted entity. If the text says "The red balloon", you must output "red balloon".
+7. Output plain text only. No markdown, no bullet points, no headers.
 """
 
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
@@ -29,6 +30,8 @@ def run(query: str) -> str:
         ("ai", "Product B"),
         ("human", "Team X has 5 points, Team Y has 8 points. Who is leading?"),
         ("ai", "Team Y"),
+        ("human", "The red balloon reached 50ft, the blue balloon reached 40ft. Which went higher?"),
+        ("ai", "red balloon"),
         ("human", "{input}")
     ])
     
