@@ -1,8 +1,0 @@
-langchain-groq
-langchain-openai
-langchain-core
-langgraph
-pydantic
-python-dotenv
-fastapi
-uvicorn
