@@ -73,7 +73,7 @@ def entity_extractor_node(state: AgentState):
     return {"result": {"entities": response.content.strip()}, "steps": ["Groq-70B extracted entities"]}
 
 def structured_processor_node(state: AgentState):
-    prompt = ChatPromptTemplate.from_template("Provide a single-sentence analysis of the following metrics. No conversational filler.\n\nMetrics: {input}")
+    prompt = ChatPromptTemplate.from_template("Provide a single-sentence analysis of the following metrics. If this looks like an extraction task instead of metrics, just output the extracted entity (e.g. date, room, name) as a raw string with no extra words. No conversational filler.\n\nData: {input}")
     response = llm_8b.invoke(prompt.format(input=state["input"]))
     return {"result": {"analysis": response.content.strip()}, "steps": ["Groq-8B processed data"]}
 

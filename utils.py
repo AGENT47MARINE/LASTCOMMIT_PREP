@@ -13,7 +13,7 @@ def rule_based_route(query: str):
         return "SUMMARIZE"
         
     # Priority 3: Facts/Entities
-    if any(word in q for word in ["extract", "entities", "who is", "what is"]):
+    if any(word in q for word in ["extract", "entities", "who is", "what is", "date", "email", "name", "room", "company"]):
         return "ENTITY"
         
     return None
