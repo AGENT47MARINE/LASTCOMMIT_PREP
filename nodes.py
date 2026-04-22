@@ -73,7 +73,7 @@ def ambiguity_node(state: AgentState):
     return {"result": {"question": "Please clarify."}, "steps": ["Ambiguity detected"]}
 
 def rag_node(state: AgentState):
-    return {"result": {"answer": "Cloud RAG analysis complete."}, "steps": ["Simulated Cloud RAG"]}
+    return {"result": {"answer": "Cloud RAG is disabled in Lite mode."}, "steps": ["RAG bypassed"]}
 
 def validator_node(state: AgentState):
     if not state["result"]: return {"error": "Processing failed", "steps": ["Validation failed"]}
