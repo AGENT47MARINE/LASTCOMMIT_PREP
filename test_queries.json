@@ -106,5 +106,11 @@
     "query": "Which planet is larger, Jupiter or the sun?",
     "expected": "the sun",
     "note": "General knowledge check within CODE/ENTITY context"
+  },
+  {
+    "category": "Level 8 Challenge",
+    "query": "The following is a transaction log. Extract the FIRST transaction greater than $100 made by a user whose name starts with 'S'. Log: - Alice paid $45 | Sam paid $80 | Steve paid $210 | Bob paid $310 - Sophie paid $95 | Sara paid $150 | Tom paid $500 | Sally paid $130",
+    "expected": "Steve paid the amount of $210.",
+    "note": "Transaction log extraction with filtering and formatting"
   }
 ]
