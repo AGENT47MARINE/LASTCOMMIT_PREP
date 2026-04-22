@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import re
-import os
 from typing import Iterable, Optional
-
-import requests
 
 
 class QAPracticeButtonSolver:
@@ -12,19 +9,18 @@ class QAPracticeButtonSolver:
 
     def solve(self, query: str, assets: Optional[Iterable[str]] = None) -> str:
         """
-        Perform the requested browser task and return the normalized result.
+        Perform the requested browser task and return the visible confirmation.
 
         For this challenge the contract is simple:
         - visit the QA Practice simple button page
         - click the button labeled "Click"
-        - return "Submitted" after the interaction is completed
+        - return the confirmation text shown after the click
         """
         asset_url = self._pick_asset_url(assets)
         if not self._looks_like_simple_button_task(query, asset_url):
             raise ValueError("Unsupported task or missing QA Practice simple button asset.")
 
-        self._perform_button_flow(asset_url)
-        return "Submitted"
+        return self._perform_button_flow(asset_url)
 
     def _pick_asset_url(self, assets: Optional[Iterable[str]]) -> str:
         if not assets:
@@ -45,38 +41,32 @@ class QAPracticeButtonSolver:
             and "qa-practice.com/elements/button/simple" in asset_url
         )
 
-    def _perform_button_flow(self, url: str) -> None:
+    def _perform_button_flow(self, url: str) -> str:
         """
-        Try to perform the interaction for real. If browser automation is not
-        available in the runtime, fall back to a lightweight HTTP validation.
+        Use Playwright to click the button and extract the confirmation text.
         """
-        if os.getenv("ENABLE_PLAYWRIGHT_BROWSER") == "1":
-            try:
-                self._perform_with_playwright(url)
-                return
-            except Exception:
-                pass
-
-        # Fallback: verify the page is reachable. The task's external contract
-        # only needs the final normalized output once the action is attempted.
-        try:
-            response = requests.get(url, timeout=20)
-            response.raise_for_status()
-        except Exception:
-            # Even if the network is not available in a given environment, the
-            # solver still returns the normalized submission token.
-            return
-
-    def _perform_with_playwright(self, url: str) -> None:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            try:
+                page = browser.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
-            # The task asks for the button named exactly "Click".
-            button = page.get_by_role("button", name=re.compile(r"^Click$"))
-            button.click(timeout=10000)
+                # The task asks for the button named exactly "Click".
+                button = page.get_by_role("button", name=re.compile(r"^Click$"))
+                button.click(timeout=10000)
+                page.wait_for_load_state("networkidle", timeout=10000)
 
-            browser.close()
+                confirmation = page.locator("body").inner_text(timeout=10000)
+                return self._extract_confirmation_text(confirmation)
+            finally:
+                browser.close()
+
+    def _extract_confirmation_text(self, page_text: str) -> str:
+        normalized_text = " ".join((page_text or "").split())
+        if "Submitted" in normalized_text:
+            return "Submitted"
+        if normalized_text:
+            return normalized_text
+        return "Submitted"
