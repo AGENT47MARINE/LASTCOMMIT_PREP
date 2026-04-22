@@ -21,6 +21,7 @@ class EvaluationOutput(BaseModel):
 
 @api.get("/")
 async def health():
+    print(">>> Health check request received")
     return {"status": "online", "engine": "Groq-70B/8B Hybrid"}
 
 @api.post("/v1/process", response_model=EvaluationOutput)
@@ -28,6 +29,9 @@ async def process_for_competition(data: EvaluationInput):
     """
     Main Endpoint for External Evaluation Engine.
     """
+    print(f"\n--- New Request Received ---")
+    print(f"Query: {data.query}")
+    start_time = time.time()
     try:
         # 1. Initialize State
         initial_state = {
@@ -58,6 +62,10 @@ async def process_for_competition(data: EvaluationInput):
         else:
             answer_str = str(result_dict)
 
+        duration = time.time() - start_time
+        print(f"Response: {answer_str[:100]}...")
+        print(f"Processing time: {duration:.2f}s")
+        print(f"----------------------------\n")
         return {"output": answer_str}
 
     except Exception as e:
