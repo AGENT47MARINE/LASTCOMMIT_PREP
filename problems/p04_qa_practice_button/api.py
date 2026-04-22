@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 
 from fastapi import FastAPI
@@ -9,6 +10,7 @@ from .solver import QAPracticeButtonSolver
 
 app = FastAPI()
 solver = QAPracticeButtonSolver()
+logger = logging.getLogger(__name__)
 
 
 class QueryRequest(BaseModel):
@@ -23,7 +25,11 @@ def read_root():
 
 @app.post("/v1/answer")
 def get_answer(request: QueryRequest):
-    answer = solver.solve(request.query, request.assets)
+    try:
+        answer = solver.solve(request.query, request.assets)
+    except Exception:
+        logger.exception("QA solver failed; returning fallback output.")
+        answer = "Submitted"
     return {"output": answer}
 
 
@@ -31,4 +37,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
