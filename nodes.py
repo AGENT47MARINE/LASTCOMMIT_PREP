@@ -51,26 +51,48 @@ def _extract_actual_task(query: str) -> str:
 
 def _solve_score_comparison(query: str) -> Optional[str]:
     """Deterministically solve simple '<name> scored <num>' comparison questions."""
+    # Allow multi-word names (e.g. 'red team') by looking for sequences of words before the verb
+    # We use a more restrictive pattern to avoid capturing conjunctions like 'and the'
     pairs = re.findall(
-        r"\b([A-Za-z][A-Za-z'\-]*)\s+(?:scored|got|earned|has|have|had)\s+(-?\d+(?:\.\d+)?)\b",
+        r"(?:^|and\s+|but\s+)\s*([A-Za-z][A-Za-z'\-\s]{0,30}?[A-Za-z])\s+(?:scored|got|earned|has|have|had)\b\s*(-?\d+(?:\.\d+)?)\b",
         query,
         flags=re.IGNORECASE,
     )
     if len(pairs) < 2:
         return None
 
+    # Safety check: if the query contains 'double', 'half', 'fewer', etc., it's multi-step logic.
+    # Return None to let the LLM handle it.
+    if any(word in query.lower() for word in ["double", "half", "fewer", "more than", "less than", "twice"]):
+        return None
+
     best_name = None
     best_score = None
+    is_lowest = any(word in query.lower() for word in ["lowest", "least", "smallest", "min", "minimum", "lower"])
     tie = False
 
-    for name, score_raw in pairs:
+    for name_raw, score_raw in pairs:
+        name = name_raw.strip()
         score = float(score_raw)
-        if best_score is None or score > best_score:
+        
+        if best_score is None:
             best_score = score
             best_name = name
-            tie = False
-        elif score == best_score:
-            tie = True
+        else:
+            if is_lowest:
+                if score < best_score:
+                    best_score = score
+                    best_name = name
+                    tie = False
+                elif score == best_score:
+                    tie = True
+            else:
+                if score > best_score:
+                    best_score = score
+                    best_name = name
+                    tie = False
+                elif score == best_score:
+                    tie = True
 
     if tie:
         return "Equal"
@@ -223,10 +245,13 @@ def code_solver_node(state: AgentState):
 def summarizer_node(state: AgentState):
     query = _extract_actual_task(state["input"])
     prompt = ChatPromptTemplate.from_template(
-        "Summarize the following text in exactly one concise sentence. Do not add any conversational filler.\n\nText: {input}"
+        "You are an ultra-concise summarizer. Summarize the text in 8 words or less.\n"
+        "Do not use introductory phrases. Just the core fact.\n"
+        "Example: 'The system uses AI to optimize' -> 'AI optimizes system performance.'\n"
+        "Text: {input}"
     )
     response = llm_8b.invoke(prompt.format(input=query))
-    return {"result": {"summary": response.content.strip()}, "steps": ["Groq-8B summarized"]}
+    return {"result": {"summary": response.content.strip().rstrip(".")}, "steps": ["Groq-8B summarized"]}
 
 def entity_extractor_node(state: AgentState):
     query = _extract_actual_task(state["input"])
