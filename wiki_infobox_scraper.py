@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 
 def extract_infobox_image_src(wikipedia_url: str) -> str | None:
     """
-    Return the infobox image URL from a Wikipedia page, or None if not found.
+    Return the best-available image URL from a Wikipedia page, or None if not found.
     """
     try:
         headers = {
@@ -44,17 +44,20 @@ def extract_infobox_image_src(wikipedia_url: str) -> str | None:
     # Fallback to the first image inside an infobox table.
     if not img_tag:
         infobox = soup.find("table", class_=lambda c: c and "infobox" in c)
-        if not infobox:
-            print("No infobox found on this page")
-            return None
-        img_tag = infobox.find("img")
-        if not img_tag:
-            print("No image found in infobox")
-            return None
+        if infobox:
+            img_tag = infobox.find("img")
+
+    # Final fallback: first image in article content for pages without infobox/sidebar.
+    if not img_tag:
+        img_tag = soup.select_one("#mw-content-text img")
+
+    if not img_tag:
+        print("No image found on this page")
+        return None
 
     src = img_tag.get("src")
     if not src:
-        print("No image found in infobox")
+        print("No image found on this page")
         return None
 
     print(src)
