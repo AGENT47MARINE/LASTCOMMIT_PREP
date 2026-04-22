@@ -39,16 +39,22 @@ async def process_for_competition(data: EvaluationInput):
         agent = importlib.import_module("challenges.05.agent")
         
         # Execute the modular agent
-        answer_str = agent.run(data.query)
+        raw_answer = agent.run(data.query)
 
         # --- POST-PROCESSING FOR 100% SCORE ---
+        answer_str = raw_answer
         if isinstance(answer_str, str):
             # Remove trailing periods, quotes, and whitespace
             answer_str = answer_str.strip().strip('.').strip('"').strip("'").strip()
             
         duration = time.time() - start_time
-        print(f"Response: {answer_str[:100]}...")
+        
+        # Verbose Logging for Render Dashboard
+        print(f"Assets Received: {data.assets}")
+        print(f"Raw LLM Output: '{raw_answer}'")
+        print(f"Final Cleaned Response: '{answer_str}'")
         print(f"Processing time: {duration:.2f}s")
+        print(f"JSON Sent: {{'output': '{answer_str}'}}")
         print(f"----------------------------\n")
         return {"output": answer_str}
 
