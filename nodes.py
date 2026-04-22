@@ -53,15 +53,24 @@ def _extract_actual_task(query: str) -> str:
     return best_task
 
 
+def _clean_entity_phrase(text: str) -> str:
+    """Trim filler articles/conjunctions while preserving the meaningful phrase."""
+    cleaned = text.strip(" \t\r\n-:|,.;")
+    cleaned = re.sub(r"^(?:and|or|the|a|an)\s+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
+
+
 def _solve_score_comparison(query: str) -> Optional[str]:
     """Deterministically solve simple '<name> scored <num>' comparison questions."""
     q = query.lower()
     if "rule" in q or "input number" in q:
         return None
 
-    # We use a word-boundary-aware pattern to avoid capturing conjunctions
+    # We use a relaxed pattern and then clean the captured phrase so that
+    # multi-word names like "the red team" become "red team".
     pairs = re.findall(
-        r"(?:^|\band\s+|\bbut\s+)\s*([A-Z][A-Za-z'\-\s]{0,30}?[A-Za-z])\s+(?:scored|got|earned|has|have|had)\b\s*(-?\d+(?:\.\d+)?)\b",
+        r"(?:^|[,\|;]|(?:\band\b|\bbut\b)\s+)\s*([A-Za-z][A-Za-z'\-\s]{0,60}?)\s+(?:scored|got|earned|has|have|had)\b\s*(-?\d+(?:\.\d+)?)\b",
         query,
         flags=re.IGNORECASE,
     )
@@ -79,8 +88,10 @@ def _solve_score_comparison(query: str) -> Optional[str]:
     tie = False
 
     for name_raw, score_raw in pairs:
-        name = name_raw.strip()
+        name = _clean_entity_phrase(name_raw)
         score = float(score_raw)
+        if not name:
+            continue
         
         if best_score is None:
             best_score = score
@@ -105,6 +116,70 @@ def _solve_score_comparison(query: str) -> Optional[str]:
         return "Equal"
 
     return best_name if best_name else None
+
+
+def _solve_transaction_extraction(query: str) -> Optional[str]:
+    """Solve first/last transaction extraction questions from a log."""
+    q = query.lower()
+    if "transaction" not in q and "paid" not in q:
+        return None
+
+    if not any(phrase in q for phrase in ["extract", "find", "first", "last"]):
+        return None
+
+    threshold_match = re.search(
+        r"(?:greater than|over|above|more than|at least)\s*\$?(\d+(?:\.\d+)?)",
+        query,
+        flags=re.IGNORECASE,
+    )
+    if not threshold_match:
+        return None
+
+    initial_match = re.search(
+        r"name\s+starts?\s+with\s*['\"]?([A-Za-z])",
+        query,
+        flags=re.IGNORECASE,
+    )
+    use_first = bool(re.search(r"\bfirst\b", q))
+    use_last = bool(re.search(r"\blast\b", q))
+
+    entries = []
+    for match in re.finditer(
+        r"([A-Za-z][A-Za-z'\-\s]{0,60}?)\s+paid\s+\$?(\d+(?:\.\d+)?)",
+        query,
+        flags=re.IGNORECASE,
+    ):
+        name = _clean_entity_phrase(match.group(1))
+        amount_raw = match.group(2)
+        if not name:
+            continue
+        entries.append(
+            {
+                "name": name,
+                "name_initial": name[0].lower(),
+                "amount": float(amount_raw),
+                "amount_raw": amount_raw,
+            }
+        )
+
+    if not entries:
+        return None
+
+    threshold = float(threshold_match.group(1))
+    filtered = [
+        entry
+        for entry in entries
+        if entry["amount"] > threshold
+        and (
+            not initial_match
+            or entry["name_initial"] == initial_match.group(1).lower()
+        )
+    ]
+    if not filtered:
+        return None
+
+    chosen = filtered[0] if use_first or not use_last else filtered[-1]
+    return f"{chosen['name']} paid the amount of ${chosen['amount_raw']}."
 
 
 def _solve_numeric_comparison(query: str) -> Optional[str]:
@@ -250,7 +325,11 @@ def code_solver_node(state: AgentState):
     query = _extract_actual_task(state["input"])
     
     # 1. Try deterministic solvers first for high precision
-    deterministic = _solve_score_comparison(query) or _solve_numeric_comparison(query)
+    deterministic = (
+        _solve_transaction_extraction(query)
+        or _solve_score_comparison(query)
+        or _solve_numeric_comparison(query)
+    )
     if deterministic:
         return {
             "result": {"solution": deterministic},
