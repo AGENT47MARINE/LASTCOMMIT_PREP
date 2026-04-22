@@ -32,6 +32,7 @@ def classifier_node(state: AgentState):
     
     prompt = ChatPromptTemplate.from_template(
         "Classify the user intent into one of: SUMMARIZE, ENTITY, RAG, CODE, ANOMALY, STRUCTURED.\n"
+        "If the input is just a statement containing a date, room, name, or event, classify it as ENTITY.\n"
         "Output ONLY the keyword, nothing else.\n"
         "Input: {input}"
     )
@@ -42,7 +43,7 @@ def classifier_node(state: AgentState):
         if choice in content:
             return {"intent": choice, "confidence": 0.9, "steps": [f"Groq-70B identified {choice}"]}
             
-    return {"intent": "AMBIGUOUS", "confidence": 0.0, "steps": ["Groq failed to classify"]}
+    return {"intent": "ENTITY", "confidence": 0.5, "steps": ["Groq failed to classify, falling back to ENTITY"]}
 
 def code_solver_node(state: AgentState):
     prompt = ChatPromptTemplate.from_template(
