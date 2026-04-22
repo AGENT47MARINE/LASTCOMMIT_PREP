@@ -52,7 +52,7 @@ async def process_for_competition(data: EvaluationInput):
         # Verbose Logging for Render Dashboard
         print(f"Assets Received: {data.assets}")
         print(f"Raw LLM Output: '{raw_answer}'")
-        print(f"Final Cleaned Response: '{answer_str}'")
+        print(f"NEURON-12 OUTPUT: '{answer_str}'")
         print(f"Processing time: {duration:.2f}s")
         print(f"JSON Sent: {{'output': '{answer_str}'}}")
         print(f"----------------------------\n")
