@@ -33,26 +33,29 @@ def extract_infobox_image_src(wikipedia_url: str) -> str | None:
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Find the first table whose class list contains "infobox".
-    infobox = soup.find("table", class_=lambda c: c and "infobox" in c)
-    if not infobox:
-        print("No infobox found on this page")
-        return None
+    # Prefer the sports sidebar image when available (e.g., Olympic rings icon).
+    sidebar = soup.find(
+        "table",
+        class_=lambda c: c and "sidebar" in c and "multi-sport-event-sidebar" in c,
+    )
 
-    # Find the first image inside the infobox.
-    img_tag = infobox.find("img")
+    img_tag = sidebar.find("img") if sidebar else None
+
+    # Fallback to the first image inside an infobox table.
     if not img_tag:
-        print("No image found in infobox")
-        return None
+        infobox = soup.find("table", class_=lambda c: c and "infobox" in c)
+        if not infobox:
+            print("No infobox found on this page")
+            return None
+        img_tag = infobox.find("img")
+        if not img_tag:
+            print("No image found in infobox")
+            return None
 
     src = img_tag.get("src")
     if not src:
         print("No image found in infobox")
         return None
-
-    # Convert protocol-relative URL to full URL.
-    if src.startswith("//"):
-        src = "https:" + src
 
     print(src)
     return src
