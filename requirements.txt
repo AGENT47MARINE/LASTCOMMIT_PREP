@@ -1,10 +1,7 @@
-fastapi
-uvicorn
 langchain-groq
 langchain-core
 langgraph
 pydantic
 python-dotenv
-sentence-transformers
-chromadb
-numpy
+fastapi
+uvicorn
