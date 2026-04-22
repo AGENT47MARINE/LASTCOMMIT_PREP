@@ -73,9 +73,14 @@ def entity_extractor_node(state: AgentState):
     return {"result": {"entities": response.content.strip()}, "steps": ["Groq-70B extracted entities"]}
 
 def structured_processor_node(state: AgentState):
-    prompt = ChatPromptTemplate.from_template("Provide a single-sentence analysis of the following metrics. If this looks like an extraction task instead of metrics, just output the extracted entity (e.g. date, room, name) as a raw string with no extra words. No conversational filler.\n\nData: {input}")
-    response = llm_8b.invoke(prompt.format(input=state["input"]))
-    return {"result": {"analysis": response.content.strip()}, "steps": ["Groq-8B processed data"]}
+    prompt = ChatPromptTemplate.from_template(
+        "You are an exact string extractor. You MUST output ONLY the raw extracted entity value, with absolutely NO extra words, NO sentences, and NO punctuation at the end.\n"
+        "Example 1: Extract date from 'Meeting on 12 March 2024'\nOutput: 12 March 2024\n"
+        "Example 2: Extract email from 'Contact test@test.com'\nOutput: test@test.com\n\n"
+        "Input: {input}\nOutput:"
+    )
+    response = llm_70b.invoke(prompt.format(input=state["input"]))
+    return {"result": {"analysis": response.content.strip()}, "steps": ["Groq-70B processed data"]}
 
 def anomaly_detector_node(state: AgentState):
     prompt = ChatPromptTemplate.from_template("Identify any anomalies in one concise sentence. No conversational filler.\n\nData: {input}")
