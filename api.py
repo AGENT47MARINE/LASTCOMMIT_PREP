@@ -24,7 +24,7 @@ async def health():
     print(">>> Health check request received")
     return {"status": "online", "engine": "Groq-70B/8B Hybrid"}
 
-@api.post("/v1/process", response_model=EvaluationOutput)
+@api.post("/v1/answer", response_model=EvaluationOutput)
 async def process_for_competition(data: EvaluationInput):
     """
     Main Endpoint for External Evaluation Engine.
