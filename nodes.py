@@ -64,10 +64,13 @@ def summarizer_node(state: AgentState):
 
 def entity_extractor_node(state: AgentState):
     prompt = ChatPromptTemplate.from_template(
-        "Extract the requested entity from the input. Output ONLY the raw extracted entity value and absolutely nothing else. No full sentences, no conversational filler, no punctuation unless it's part of the entity.\n\nInput: {input}"
+        "You are an exact string extractor. You MUST output ONLY the raw extracted entity value, with absolutely NO extra words, NO sentences, and NO punctuation at the end.\n"
+        "Example 1: Extract date from 'Meeting on 12 March 2024'\nOutput: 12 March 2024\n"
+        "Example 2: Extract email from 'Contact test@test.com'\nOutput: test@test.com\n\n"
+        "Input: {input}\nOutput:"
     )
-    response = llm_8b.invoke(prompt.format(input=state["input"]))
-    return {"result": {"entities": response.content.strip()}, "steps": ["Groq-8B extracted entities"]}
+    response = llm_70b.invoke(prompt.format(input=state["input"]))
+    return {"result": {"entities": response.content.strip()}, "steps": ["Groq-70B extracted entities"]}
 
 def structured_processor_node(state: AgentState):
     prompt = ChatPromptTemplate.from_template("Provide a single-sentence analysis of the following metrics. No conversational filler.\n\nMetrics: {input}")
