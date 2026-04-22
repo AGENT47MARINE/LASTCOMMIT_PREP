@@ -18,6 +18,9 @@ class EvaluationInput(BaseModel):
 
 class EvaluationOutput(BaseModel):
     output: str  # Flat string response as required by the evaluator
+    intent: Optional[str] = None
+    cosine_score: Optional[float] = None
+    latency_ms: Optional[float] = None
 
 @api.get("/")
 async def health():
@@ -77,7 +80,13 @@ async def process_for_competition(data: EvaluationInput):
         print(f"Response: {answer_str[:100]}...")
         print(f"Processing time: {duration:.2f}s")
         print(f"----------------------------\n")
-        return {"output": answer_str}
+        
+        return {
+            "output": answer_str,
+            "intent": final_state.get("intent"),
+            "cosine_score": round(final_state.get("confidence", 0.0), 4),
+            "latency_ms": round(duration * 1000, 2)
+        }
 
     except Exception as e:
         # Standard error response for the evaluator
