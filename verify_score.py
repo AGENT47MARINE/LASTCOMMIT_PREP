@@ -8,10 +8,10 @@ def calculate_exact_match(predicted, ground_truth):
     return 1.0 if p == g else 0.0
 
 test_cases = [
-    {"query": "Alice scored 80, Bob scored 90. Who scored highest?", "expected": "Bob"},
-    {"query": "Car A goes 100mph, Car B goes 120mph. Which is faster?", "expected": "Car B"},
-    {"query": "Laptop A is $1000, Laptop B is $800. Which is more expensive?", "expected": "Laptop A"},
-    {"query": "John is 30 years old, Mike is 25 years old. Who is younger?", "expected": "Mike"}
+    {"query": "Compare: 5, 8. Which is greater?", "expected": "8"},
+    {"query": "Compare: banana, apple. Which is greater?", "expected": "banana"},
+    {"query": "Compare: 100, 200. Which is smaller?", "expected": "100"},
+    {"query": "Compare: Cat, Dog. Which is smaller?", "expected": "Cat"}
 ]
 
 print("--- Starting Cosine Similarity (Exact Match) Test ---")
