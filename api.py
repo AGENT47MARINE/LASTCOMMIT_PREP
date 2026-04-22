@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from problems.p03_matrix_multiplication.solver import MatrixSolver
 from problems.p04_qa_practice_button.solver import QAPracticeButtonSolver
+from wiki_infobox_scraper import extract_infobox_image_src
 
 # Configure logging to show that the process is occurring
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -32,6 +33,15 @@ def read_root():
 @app.post("/v1/answer")
 def get_answer(request: QueryRequest):
     logger.info(f"Received query: {request.query}")
+    assets = request.assets or []
+
+    wiki_asset = next((asset for asset in assets if "wikipedia.org/wiki/" in asset), None)
+    if wiki_asset:
+        logger.info("Routing to Wikipedia image extractor")
+        image_src = extract_infobox_image_src(wiki_asset)
+        answer = image_src or "No image found on this page"
+        logger.info("Solver completed successfully")
+        return {"output": answer}
     
     # Automatically route to the correct solver based on the query
     if "matrix" in request.query.lower() or "[[" in request.query:
