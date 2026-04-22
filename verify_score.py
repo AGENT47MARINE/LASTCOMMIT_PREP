@@ -9,9 +9,9 @@ def calculate_exact_match(predicted, ground_truth):
 
 test_cases = [
     {"query": "Is an elephant bigger or a banana?", "expected": "Elephant"},
-    {"query": "Which is faster: a jet or a bicycle?", "expected": "Jet"},
+    {"query": "Which is greater: 100 or 100?", "expected": "Equal"},
     {"query": "Compare: 40, 20. Which is greater?", "expected": "40"},
-    {"query": "Which is more: 50 or 10?", "expected": "50"}
+    {"query": "Which is more: 50 or 50?", "expected": "Equal"}
 ]
 
 print("--- Starting Cosine Similarity (Exact Match) Test ---")
