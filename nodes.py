@@ -64,7 +64,7 @@ def summarizer_node(state: AgentState):
 
 def entity_extractor_node(state: AgentState):
     prompt = ChatPromptTemplate.from_template(
-        "Answer the following factual question as concisely as possible in exactly one sentence. Do NOT use JSON. Do not add any conversational filler.\n\nQuestion: {input}"
+        "Extract the requested entity from the input. Output ONLY the raw extracted entity value and absolutely nothing else. No full sentences, no conversational filler, no punctuation unless it's part of the entity.\n\nInput: {input}"
     )
     response = llm_8b.invoke(prompt.format(input=state["input"]))
     return {"result": {"entities": response.content.strip()}, "steps": ["Groq-8B extracted entities"]}
